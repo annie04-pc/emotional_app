@@ -34,7 +34,7 @@ model_name = "gemini-3-flash"
 # 2. 在日誌印出正在啟用的模型名稱（方便我們在 Log 檢查有沒有多空格）
 print(f"🤖 正在啟動 AI 模型: [{model_name}]")
 
-model = google-genai(model_name)
+model = genai.GenerativeModel(model_name)
 
 # 3. 妳的 System Instruction 改到 generate_content 裡面，或是先拿掉測試
 # 為了最快除錯，我們先用最陽春的設定
