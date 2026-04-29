@@ -29,7 +29,7 @@ genai.configure(api_key=api_key)
 
 # 設定 AI 角色定位 (System Instruction)
 # 1. 改用最基本的名稱，不要加 models/，也不要加額外參數
-model_name = "gemini-2.5-pro" 
+model_name = "gemini-3-flash" 
 
 # 2. 在日誌印出正在啟用的模型名稱（方便我們在 Log 檢查有沒有多空格）
 print(f"🤖 正在啟動 AI 模型: [{model_name}]")
