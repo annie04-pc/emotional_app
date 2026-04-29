@@ -28,10 +28,16 @@ else:
 genai.configure(api_key=api_key)
 
 # 設定 AI 角色定位 (System Instruction)
-model = genai.GenerativeModel(
-    model_name="models/gemini-2.5-Pro",  # 👈 加上 models/ 字樣
-    system_instruction="妳是 AINI，一位溫暖且具備同理心的心理諮商師。請用繁體中文回覆，語氣要親切且穩定。"
-)
+# 1. 改用最基本的名稱，不要加 models/，也不要加額外參數
+model_name = "gemini-2.5-Pro" 
+
+# 2. 在日誌印出正在啟用的模型名稱（方便我們在 Log 檢查有沒有多空格）
+print(f"🤖 正在啟動 AI 模型: [{model_name}]")
+
+model = genai.GenerativeModel(model_name)
+
+# 3. 妳的 System Instruction 改到 generate_content 裡面，或是先拿掉測試
+# 為了最快除錯，我們先用最陽春的設定
 
 class ChatRequest(BaseModel):
     question: str
