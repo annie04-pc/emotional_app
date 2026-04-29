@@ -29,7 +29,7 @@ genai.configure(api_key=api_key)
 
 # 設定 AI 角色定位 (System Instruction)
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-Pro",
+    model_name="models/gemini-2.5-Pro",  # 👈 加上 models/ 字樣
     system_instruction="妳是 AINI，一位溫暖且具備同理心的心理諮商師。請用繁體中文回覆，語氣要親切且穩定。"
 )
 
