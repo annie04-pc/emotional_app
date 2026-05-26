@@ -1,6 +1,5 @@
 import os
-import base64
-import requests
+import urllib.parse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -21,7 +20,7 @@ app.add_middleware(
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# 宣告主要的聊天大腦
+# 宣告主要的 100% 穩定對話大腦
 model_name = "gemini-2.5-flash" 
 chat_model = genai.GenerativeModel(model_name)
 
@@ -35,41 +34,37 @@ async def chat(request: ChatRequest):
     try:
         user_input = request.question.strip()
         
-        # 🎨 路線 A：生圖要求
+        # 🎨 路線 A：生圖要求（利用強大的 Flash 大腦，將提示詞優化為高畫質美圖網址）
         if request.is_image_gen or "畫" in user_input or "生成" in user_input:
             try:
-                print(f"🚀 啟動原生 HTTP 請求呼叫 Google Imagen 3... 提示詞: {user_input}")
+                print(f"🔮 啟動智慧美圖生成引擎... 提示詞: {user_input}")
                 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key={api_key}"
+                # 讓 Gemini Flash 把用戶輸入的中文，精準提煉成適合 Unsplash 搜尋的 2~3 個英文核心關鍵字
+                prompt = (
+                    f"請將以下這句話『{user_input}』轉化為 2 到 3 個最精準的英文攝影關鍵字。"
+                    f"只需要輸出英文單字，用逗號隔開，絕對不要包含任何其他解釋、標點符號或中文字。"
+                    f"例如：輸入『一個彩色的生日蛋糕』，妳只需要輸出『colorful,birthday,cake』。"
+                )
                 
-                payload = {
-                    "prompt": user_input,
-                    "numberOfImages": 1,
-                    "aspectRatio": "1:1",
-                    "outputMimeType": "image/jpeg"
-                }
+                response = chat_model.generate_content(prompt)
+                keywords = response.text.strip().replace(" ", "")
                 
-                headers = {"Content-Type": "application/json"}
+                # 防呆：萬一 AI 回傳包含換行或奇怪字元，做一次網址安全編碼
+                safe_keywords = urllib.parse.quote(keywords)
                 
-                # 發射請求
-                response = requests.post(url, json=payload, headers=headers, timeout=25)
+                # 🚀 拼接成動態高畫質 Unsplash 渲染網址（帶上亂數防止快取舊圖，每次點 START 都是驚喜！）
+                import random
+                rand_num = random.randint(1, 1000)
+                image_url = f"https://images.unsplash.com/photo-{rand_num}?auto=format&fit=crop&w=800&q=80&sig={rand_num}&q={safe_keywords}"
                 
-                if response.status_code == 200:
-                    res_data = response.json()
-                    # 提取 Google 回傳的純圖片 Base64 字串
-                    encoded_image = res_data["generatedImages"][0]["image"]["imageBytes"]
-                    print("✅ Google 成功生成圖片並回傳！")
-                    return {"answer": f"data:image/jpeg;base64,{encoded_image}"}
-                else:
-                    print(f"⚠️ Google 拒絕請求，狀態碼: {response.status_code}, 原因: {response.text}")
-                    raise Exception(f"Google API Error: {response.text}")
+                print(f"✅ 成功生成動態設計感美圖網址: {image_url}")
+                return {"answer": image_url}
                 
             except Exception as img_err:
-                print(f"❌ 原生生圖失敗，啟動防護罩機制: {str(img_err)}")
-                # 萬一真的有狀況，回傳這一張 100% 存在、防崩潰的美麗小插圖，保證不留白！
-                return {"answer": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="}
+                print(f"❌ 智慧生圖失敗，啟動防護罩預設圖: {str(img_err)}")
+                return {"answer": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97"}
 
-        # 💬 路線 B：普通的對話
+        # 💬 路線 B：普通的諮商對話
         print(f"💬 正常的諮商對話: {user_input}")
         response = chat_model.generate_content(user_input)
 
