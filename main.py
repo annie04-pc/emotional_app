@@ -40,17 +40,13 @@ async def chat(request: ChatRequest):
             try:
                 print(f"🚀 啟動原生 HTTP 請求呼叫 Google Imagen 3... 提示詞: {user_input}")
                 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={api_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key={api_key}"
                 
                 payload = {
-                    "instances": [
-                    {"prompt": user_input}
-                    ],
-                    "parameters": {
-                        "numberOfImages": 1,
-                        "aspectRatio": "1:1",
-                        "outputMimeType": "image/jpeg"
-                    }
+                    "prompt": user_input,
+                    "numberOfImages": 1,
+                    "aspectRatio": "1:1",
+                    "outputMimeType": "image/jpeg"
                 }
                 
                 headers = {"Content-Type": "application/json"}
