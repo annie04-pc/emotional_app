@@ -55,7 +55,7 @@ async def chat(request: ChatRequest):
                 # 發射請求
                 response = requests.post(url, json=payload, headers=headers, timeout=25)
                 
-                if response.statusCode == 200:
+                if response.status_code == 200:
                     res_data = response.json()
                     # 提取 Google 回傳的純圖片 Base64 字串
                     encoded_image = res_data["generatedImages"][0]["image"]["imageBytes"]
