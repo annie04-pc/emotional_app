@@ -73,9 +73,9 @@ async def chat(request: ChatRequest):
         response = chat_model.generate_content(user_input)
 
         if response and response.candidates and len(response.candidates) > 0:
-            return {"answer": response.text} [cite: 2]
+            return {"answer": response.text} 
         else:
-            return {"answer": "AI 暫時無法回應，請試著用更溫和的方式提問。"} [cite: 3]
+            return {"answer": "AI 暫時無法回應，請試著用更溫和的方式提問。"} 
 
     except Exception as e:
         print(f"Chat Error Detail: {str(e)}")
