@@ -40,14 +40,17 @@ async def chat(request: ChatRequest):
             try:
                 print(f"🚀 啟動原生 HTTP 請求呼叫 Google Imagen 3... 提示詞: {user_input}")
                 
-                # 💡 使用底層 HTTP POST 直接對接 Google AI Studio 官方生圖端點
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key={api_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={api_key}"
                 
                 payload = {
-                    "numberOfImages": 1,
-                    "prompt": user_input,
-                    "aspectRatio": "1:1",
-                    "outputMimeType": "image/jpeg"
+                    "instances": [
+                    {"prompt": user_input}
+                    ],
+                    "parameters": {
+                        "numberOfImages": 1,
+                        "aspectRatio": "1:1",
+                        "outputMimeType": "image/jpeg"
+                    }
                 }
                 
                 headers = {"Content-Type": "application/json"}
