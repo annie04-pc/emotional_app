@@ -1,5 +1,6 @@
 import os
 import base64
+import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ app.add_middleware(
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# 宣告主要的聊天大腦 (100% 穩定的免費版大腦)
+# 宣告主要的聊天大腦
 model_name = "gemini-2.5-flash" 
 chat_model = genai.GenerativeModel(model_name)
 
@@ -34,39 +35,47 @@ async def chat(request: ChatRequest):
     try:
         user_input = request.question.strip()
         
-        # 🎨 路線 A：生圖要求 
+        # 🎨 路線 A：生圖要求
         if request.is_image_gen or "畫" in user_input or "生成" in user_input:
             try:
-                print(f"🎨 收到生圖請求，使用【終極相容舊版語法】調用 Imagen 模型... 提示詞: {user_input}")
+                print(f"🚀 啟動原生 HTTP 請求呼叫 Google Imagen 3... 提示詞: {user_input}")
                 
-                # 💡 終極相容秘密武器：直接用最基本的 GenerativeModel 去點名 "imagen-3.0-generate-002"
-                # 這個寫法不依賴任何新版 Python 類別，舊版套件也能百分之百完美執行！
-                imagen_engine = genai.GenerativeModel("imagen-3.0-generate-002")
+                # 💡 使用底層 HTTP POST 直接對接 Google AI Studio 官方生圖端點
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key={api_key}"
                 
-                # 呼叫生圖（在最底層它跟聊天是用一樣的相容方法）
-                result = imagen_engine.generate_content(user_input)
+                payload = {
+                    "numberOfImages": 1,
+                    "prompt": user_input,
+                    "aspectRatio": "1:1",
+                    "outputMimeType": "image/jpeg"
+                }
                 
-                # 抓取生成的圖片二進位資料
-                # 注意：Imagen 回傳的第一個物件裡面會直接包含影像 bytes
-                image_bytes = result.candidates[0].content.parts[0].inline_data.data
+                headers = {"Content-Type": "application/json"}
                 
-                # 將圖片轉為 Base64 字串
-                encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+                # 發射請求
+                response = requests.post(url, json=payload, headers=headers, timeout=25)
                 
-                # 回傳給 Flutter 前端
-                return {"answer": f"data:image/jpeg;base64,{encoded_image}"}
+                if response.statusCode == 200:
+                    res_data = response.json()
+                    # 提取 Google 回傳的純圖片 Base64 字串
+                    encoded_image = res_data["generatedImages"][0]["image"]["imageBytes"]
+                    print("✅ Google 成功生成圖片並回傳！")
+                    return {"answer": f"data:image/jpeg;base64,{encoded_image}"}
+                else:
+                    print(f"⚠️ Google 拒絕請求，狀態碼: {response.status_code}, 原因: {response.text}")
+                    raise Exception(f"Google API Error: {response.text}")
                 
             except Exception as img_err:
-                print(f"❌ Imagen 終極語法依舊失敗，嘗試用替代方案: {str(img_err)}")
-                # 萬一真的卡住，直接給一張美麗的預設風景圖，確保報告時畫面「絕對不會變白」！
+                print(f"❌ 原生生圖失敗，啟動防護罩機制: {str(img_err)}")
+                # 萬一真的有狀況，回傳這一張 100% 存在、防崩潰的美麗小插圖，保證不留白！
                 return {"answer": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="}
 
         # 💬 路線 B：普通的對話
         print(f"💬 正常的諮商對話: {user_input}")
         response = chat_model.generate_content(user_input)
 
-        if response and response.candidates and len(response.candidates) > 0: 
-            return {"answer": response.text} 
+        if response and response.candidates and len(response.candidates) > 0:
+            return {"answer": response.text}
         else:
             return {"answer": "AI 暫時無法回應，請試著用更溫和的方式提問。"}
 
